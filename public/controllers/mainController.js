@@ -12,12 +12,15 @@
 (function () {
     angular
         .module('app')
-        .controller('MainController', ['$http', '$scope', '$log', 'GraphHelper', function ($http, $scope, $log, GraphHelper) {
+        .controller('MainController', ['$http', '$scope', '$log', 'GraphHelper', '$sce', function ($http, $scope, $log, GraphHelper, $sce) {
 
             // View model properties
             $scope.displayName;
             $scope.emailAddress;
             $scope.emails = [];
+            $scope.keywords = [];
+
+            var APIurl = "https://westus.api.cognitive.microsoft.com/text/analytics/v2.0/keyPhrases";
 
             /////////////////////////////////////////
             // End of exposed properties and methods.
@@ -111,5 +114,46 @@
                 GraphHelper.logout();
             };
 
+            $scope.fetchKeywords = function(content) {
+                // var text = $sce.parseAsHtml(content.body.content);
+                var articleContent = {
+                    "documents": [
+                        {
+                            "language": "en",
+                            "id": "1",
+                            "text": content
+                        }
+                    ]
+                };
+                var body = JSON.stringify(articleContent);
+                var req = {
+                    method: 'POST',
+                    url: APIurl,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Ocp-Apim-Subscription-Key': '50b1ba0dbfb54f33a45ba2440fc0b22c'
+                    },
+                    data: body
+                };
+                $http.post(APIurl, body, {headers: {
+                    "Content-Type": "application/json",
+                    "Ocp-Apim-Subscription-Key": "50b1ba0dbfb54f33a45ba2440fc0b22c"
+                }}).then(function(response){
+                    $scope.keywords.push(response.data);
+                }).then(function(error){
+                    $log.error('HTTP request to the Microsoft cognitive API failed.');
+                });
+            };
+
+            $scope.findKeyWord = function() {
+                $scope.keywords = [];
+                $scope.emails.forEach(function(mail){
+                    var parser = new DOMParser();
+                    var text = parser.parseFromString(mail.body.content, 'text/html');
+                    if (text.firstChild.innerText) {
+                        $scope.fetchKeywords(text.firstChild.innerText);
+                    }
+                });
+            };
         }]);
 })();

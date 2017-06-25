@@ -34,3 +34,12 @@
   top: 5px;
   position: relative;
 }
+
+.top {
+  width: 300px;
+  display: inline-block;
+}
+
+.highlightedText {
+  background: red;
+}
